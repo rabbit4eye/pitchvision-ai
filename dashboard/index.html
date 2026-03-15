@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+
+<!-- Perplexity Computer Attribution — SEO Meta Tags -->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PitchVision AI - Match Analysis Dashboard</title>
+<meta name="description" content="Professional soccer match analysis dashboard with comprehensive statistics, passing maps, shot charts, and player analytics.">
+
+<link rel="stylesheet" href="css/style.css">
+
+<!-- CDN Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230f1923'/><circle cx='16' cy='16' r='10' stroke='%234ade80' stroke-width='2' fill='none'/><circle cx='16' cy='16' r='3' fill='%234ade80'/></svg>">
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div class="loading-screen" id="loading-screen">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading match data...</div>
+</div>
+
+<!-- Header -->
+<header class="app-header">
+  <div class="header-top">
+    <div class="logo-area">
+      <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="PitchVision AI Logo">
+        <rect width="40" height="40" rx="8" fill="#1a2a3a"/>
+        <circle cx="20" cy="20" r="13" stroke="#4ade80" stroke-width="2" fill="none"/>
+        <circle cx="20" cy="20" r="4" fill="#4ade80" opacity="0.9"/>
+        <line x1="20" y1="7" x2="20" y2="33" stroke="#4ade80" stroke-width="0.8" opacity="0.3"/>
+        <line x1="7" y1="20" x2="33" y2="20" stroke="#4ade80" stroke-width="0.8" opacity="0.3"/>
+        <path d="M20 7 A13 13 0 0 1 33 20" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+      </svg>
+      <div class="logo-text">Pitch<span>Vision</span> AI</div>
+    </div>
+    <div class="match-info">
+      <div class="match-teams">
+        <span class="home-name" id="home-team-name">TeamA</span>
+        <span class="vs">vs</span>
+        <span class="away-name" id="away-team-name">TeamB</span>
+      </div>
+      <div class="match-score" id="match-score-text">Loading...</div>
+      <div class="match-date">Dec 13, 2025</div>
+    </div>
+    <div style="width:140px;"></div>
+  </div>
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="passing">Passing</button>
+    <button class="tab-btn" data-tab="shooting">Shooting</button>
+    <button class="tab-btn" data-tab="defending">Defending</button>
+    <button class="tab-btn" data-tab="physical">Physical</button>
+    <button class="tab-btn" data-tab="goalkeeping">Goalkeeping</button>
+    <button class="tab-btn" data-tab="players">Players</button>
+  </nav>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
+
+  <!-- ===== TAB: OVERVIEW ===== -->
+  <div class="tab-panel active" id="tab-overview">
+    <div class="score-banner">
+      <div class="score-team">
+        <div class="score-team-label">Home</div>
+        <div class="score-team-name home" id="score-home-name">TeamA</div>
+      </div>
+      <div class="score-value">
+        <div class="score-num" id="score-home-num">0</div>
+        <div class="score-divider">:</div>
+        <div class="score-num" id="score-away-num">0</div>
+      </div>
+      <div class="score-team">
+        <div class="score-team-label">Away</div>
+        <div class="score-team-name away" id="score-away-name">TeamB</div>
+      </div>
+    </div>
+    <div class="section-title">Match Statistics</div>
+    <div class="kpi-grid" id="kpi-grid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- ===== TAB: PASSING ===== -->
+  <div class="tab-panel" id="tab-passing">
+    <div class="section-title">Passing Analysis</div>
+
+    <!-- Overall Passing -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" id="pass-home-team-label">Home Passing</div>
+        </div>
+        <div class="donut-pair">
+          <div class="donut-item">
+            <div class="chart-container" style="height:160px;"><canvas id="pass-donut-home"></canvas></div>
+          </div>
+          <div id="pass-home-total" style="display:flex;flex-direction:column;align-items:center;justify-content:center;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" id="pass-away-team-label">Away Passing</div>
+        </div>
+        <div class="donut-pair">
+          <div class="donut-item">
+            <div class="chart-container" style="height:160px;"><canvas id="pass-donut-away"></canvas></div>
+          </div>
+          <div id="pass-away-total" style="display:flex;flex-direction:column;align-items:center;justify-content:center;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pass Type Breakdown -->
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Pass Type Breakdown</div></div>
+      <div id="pass-type-breakdown"></div>
+    </div>
+
+    <!-- Pass Frequency & Accuracy -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Pass Frequency (per 5 min)</div></div>
+        <div class="chart-container medium"><canvas id="pass-frequency-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Pass Accuracy (per 5 min)</div></div>
+        <div class="chart-container medium"><canvas id="pass-accuracy-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Pass Direction -->
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Pass Direction Distribution</div></div>
+      <div class="chart-container medium"><canvas id="pass-direction-chart"></canvas></div>
+    </div>
+
+    <!-- Pass Matrix -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Pass Matrix — Home</div></div>
+        <div id="pass-matrix-home"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Pass Matrix — Away</div></div>
+        <div id="pass-matrix-away"></div>
+      </div>
+    </div>
+
+    <!-- Pass Field Map -->
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Pass Map</div></div>
+      <div id="pass-field-map" class="pitch-container"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: SHOOTING ===== -->
+  <div class="tab-panel" id="tab-shooting">
+    <div class="section-title">Shooting Analysis</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Home — Shots On/Off Target</div></div>
+        <div class="chart-container" style="height:180px;"><canvas id="shot-donut-home"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Away — Shots On/Off Target</div></div>
+        <div class="chart-container" style="height:180px;"><canvas id="shot-donut-away"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Shot Types Comparison</div></div>
+        <div class="chart-container medium"><canvas id="shot-types-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Conversion Rate (%)</div></div>
+        <div class="chart-container medium"><canvas id="shot-conversion-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Shot Map -->
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Shot Map</div></div>
+      <div id="shot-field-map" class="pitch-container"></div>
+    </div>
+
+    <!-- Shooting Timeline -->
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Shooting per 15-min Intervals</div></div>
+      <div class="chart-container medium"><canvas id="shot-timeline-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: DEFENDING ===== -->
+  <div class="tab-panel" id="tab-defending">
+    <div class="section-title">Defending Analysis</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Home — Defensive Actions</div></div>
+        <div class="chart-container" style="height:180px;"><canvas id="def-donut-home"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Away — Defensive Actions</div></div>
+        <div class="chart-container" style="height:180px;"><canvas id="def-donut-away"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Tackles per 5 min</div></div>
+        <div class="chart-container medium"><canvas id="def-tackles-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Interceptions per 5 min</div></div>
+        <div class="chart-container medium"><canvas id="def-interceptions-chart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Tackle Accuracy per 5 min</div></div>
+      <div class="chart-container medium"><canvas id="def-accuracy-chart"></canvas></div>
+    </div>
+
+    <!-- Defensive Field Map -->
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Defensive Actions Map</div></div>
+      <div id="def-field-map" class="pitch-container"></div>
+    </div>
+
+    <!-- Third Distribution -->
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Third Distribution</div></div>
+      <div id="def-thirds"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: PHYSICAL ===== -->
+  <div class="tab-panel" id="tab-physical">
+    <div class="section-title">Physical Analysis</div>
+
+    <div class="section-subtitle">Ground Duels</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Home — Ground Duels</div></div>
+        <div class="chart-container" style="height:180px;"><canvas id="phys-ground-home"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Away — Ground Duels</div></div>
+        <div class="chart-container" style="height:180px;"><canvas id="phys-ground-away"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-subtitle">Aerial Duels</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Home — Aerial Duels</div></div>
+        <div class="chart-container" style="height:180px;"><canvas id="phys-aerial-home"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Away — Aerial Duels</div></div>
+        <div class="chart-container" style="height:180px;"><canvas id="phys-aerial-away"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Duel Timeline (per 5 min)</div></div>
+        <div class="chart-container medium"><canvas id="phys-timeline-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Duel Win Rate (%)</div></div>
+        <div class="chart-container medium"><canvas id="phys-accuracy-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Physical Heatmap -->
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Physical Actions Heatmap</div></div>
+      <div id="phys-field-map" class="pitch-container"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: GOALKEEPING ===== -->
+  <div class="tab-panel" id="tab-goalkeeping">
+    <div class="section-title">Goalkeeping Analysis</div>
+
+    <div id="gk-stats"></div>
+
+    <div class="card full-width" style="margin-top:16px;">
+      <div class="card-header"><div class="card-title">GK Throw Activity</div></div>
+      <div class="chart-container medium"><canvas id="gk-throw-chart"></canvas></div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Save Position Map</div></div>
+      <div id="gk-save-map" class="pitch-container"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: PLAYERS ===== -->
+  <div class="tab-panel" id="tab-players">
+    <div class="section-title">Player Analysis</div>
+
+    <div class="player-controls">
+      <select class="player-select" id="player-team-select"></select>
+      <select class="player-select" id="player-select"></select>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Player Radar</div></div>
+        <div class="chart-container" style="height:300px;"><canvas id="player-radar-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Key Stats</div></div>
+        <div id="player-stats-detail" class="grid-3" style="gap:8px;">
+        </div>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Player Event Timeline</div></div>
+      <div id="player-timeline"></div>
+    </div>
+
+    <div class="card full-width">
+      <div class="card-header"><div class="card-title">Team Player Summary</div></div>
+      <div id="player-summary-table"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="app-footer">
+  <div class="footer-text">
+    PitchVision AI — Powered by Computer Vision &nbsp;·&nbsp;
+    <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">Created with Perplexity Computer</a>
+  </div>
+</footer>
+
+<!-- Scripts -->
+<script src="js/data-processor.js"></script>
+<script src="js/pitch.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/players.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
