@@ -1,0 +1,86 @@
+# PitchVision AI - Docker Compose Configuration
+version: '3.8'
+
+services:
+  # Main API Server
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    environment:
+      - DATABASE_URL=postgresql://pitchvision:pitchvision@db:5432/pitchvision
+      - REDIS_URL=redis://redis:6379/0
+      - CUDA_VISIBLE_DEVICES=0
+    depends_on:
+      - db
+      - redis
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Celery Worker (GPU processing)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A src.worker worker --loglevel=info --concurrency=1
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    environment:
+      - DATABASE_URL=postgresql://pitchvision:pitchvision@db:5432/pitchvision
+      - REDIS_URL=redis://redis:6379/0
+      - CUDA_VISIBLE_DEVICES=0
+    depends_on:
+      - db
+      - redis
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Dashboard (Static Files)
+  dashboard:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./dashboard:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=pitchvision
+      - POSTGRES_USER=pitchvision
+      - POSTGRES_PASSWORD=pitchvision
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Redis (Job Queue)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  pgdata:
+  redisdata:
